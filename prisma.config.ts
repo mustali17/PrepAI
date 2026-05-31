@@ -11,6 +11,7 @@ export default defineConfig({
   },
   engine: "classic",
   datasource: {
-    url: env("DATABASE_URL"),
+    // Fallback keeps `prisma generate` working in CI without a real DB connection
+    url: process.env.DATABASE_URL ?? "mongodb://localhost:27017/prepai",
   },
 });
