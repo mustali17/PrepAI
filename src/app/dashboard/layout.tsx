@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { Sidebar } from "@/components/dashboard/sidebar";
+import { Sidebar, MobileSidebar } from "@/components/dashboard/sidebar";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -9,9 +9,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="flex min-h-screen">
       <Sidebar user={session.user} />
-      <main className="flex-1 overflow-auto">
-        <div className="max-w-7xl mx-auto p-6">{children}</div>
-      </main>
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+        <MobileSidebar user={session.user} />
+        <main className="flex-1 overflow-auto">
+          <div className="max-w-7xl mx-auto p-6">{children}</div>
+        </main>
+      </div>
     </div>
   );
 }

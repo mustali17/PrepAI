@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logoutAction } from "@/actions/auth";
@@ -14,6 +15,8 @@ import {
   Zap,
   Shield,
   HelpCircle,
+  Menu,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -127,5 +130,124 @@ export function Sidebar({ user }: SidebarProps) {
         </form>
       </div>
     </aside>
+  );
+}
+
+export function MobileSidebar({ user }: SidebarProps) {
+  const pathname = usePathname();
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    setIsOpen(false);
+  }, [pathname]);
+
+  return (
+    <>
+      <div className="md:hidden flex items-center justify-between p-4 border-b border-sidebar-border bg-sidebar-background sticky top-0 z-40">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-sidebar-primary flex items-center justify-center">
+            <Zap className="h-4 w-4 text-sidebar-primary-foreground" />
+          </div>
+          <span className="font-bold text-lg text-sidebar-foreground">PrepAI</span>
+        </div>
+        <Button variant="ghost" size="icon" className="text-sidebar-foreground hover:bg-sidebar-accent" onClick={() => setIsOpen(true)}>
+          <Menu className="h-6 w-6" />
+        </Button>
+      </div>
+
+      {isOpen && (
+        <div className="md:hidden fixed inset-0 z-50 bg-sidebar-background flex flex-col animate-in slide-in-from-right-full duration-200">
+          <div className="flex items-center justify-between p-4 border-b border-sidebar-border">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-sidebar-primary flex items-center justify-center">
+                <Zap className="h-4 w-4 text-sidebar-primary-foreground" />
+              </div>
+              <span className="font-bold text-lg text-sidebar-foreground">PrepAI</span>
+            </div>
+            <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="text-sidebar-foreground hover:bg-sidebar-accent">
+              <X className="h-6 w-6" />
+            </Button>
+          </div>
+
+          <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+            {navItems.map((item) => {
+              const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-3 rounded-md text-base font-medium transition-colors",
+                    isActive
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                      : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                  )}
+                >
+                  <item.icon className="h-5 w-5" />
+                  {item.label}
+                </Link>
+              );
+            })}
+
+            {user.role === "ADMIN" && (
+              <>
+                <div className="pt-6 pb-2">
+                  <p className="px-3 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/40">
+                    Admin
+                  </p>
+                </div>
+                {[
+                  { href: "/admin/tracks", icon: BookOpen, label: "Manage Tracks" },
+                  { href: "/admin/questions", icon: HelpCircle, label: "Manage Questions" },
+                  { href: "/admin/users", icon: Shield, label: "Manage Users" },
+                ].map((item) => {
+                  const isActive = pathname.startsWith(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-3 rounded-md text-base font-medium transition-colors",
+                        isActive
+                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                          : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                      )}
+                    >
+                      <item.icon className="h-5 w-5" />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </>
+            )}
+          </nav>
+
+          <div className="p-4 border-t border-sidebar-border mt-auto">
+            <div className="flex items-center gap-3 mb-4">
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={user.image ?? undefined} />
+                <AvatarFallback className="bg-primary text-primary-foreground">
+                  {user.name?.slice(0, 2).toUpperCase() ?? "??"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="text-base font-medium text-sidebar-foreground truncate">{user.name}</p>
+                <p className="text-sm text-sidebar-foreground/50 truncate">{user.email}</p>
+              </div>
+            </div>
+            <form action={logoutAction}>
+              <Button
+                type="submit"
+                variant="ghost"
+                className="w-full justify-start gap-2 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+              >
+                <LogOut className="h-4 w-4" />
+                Sign out
+              </Button>
+            </form>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

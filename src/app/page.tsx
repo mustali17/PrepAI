@@ -97,8 +97,8 @@ export default function LandingPage() {
           <span className="text-primary">Technical Interview</span> with AI
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mb-10">
-          Practice mock interviews, get instant AI feedback, track your progress, and receive
-          personalized study plans — all in one platform.
+          Practice mock interviews, get instant AI feedback, track your
+          progress, and receive personalized study plans — all in one platform.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link href="/signup">
@@ -117,7 +117,9 @@ export default function LandingPage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 mt-20 max-w-2xl">
           {stats.map((stat) => (
             <div key={stat.label} className="text-center">
-              <div className="text-2xl font-bold text-primary">{stat.value}</div>
+              <div className="text-2xl font-bold text-primary">
+                {stat.value}
+              </div>
               <div className="text-sm text-muted-foreground">{stat.label}</div>
             </div>
           ))}
@@ -128,10 +130,12 @@ export default function LandingPage() {
       <section className="py-20 px-4 bg-muted/30">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Everything You Need to Succeed</h2>
+            <h2 className="text-3xl font-bold mb-4">
+              Everything You Need to Succeed
+            </h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              From AI-generated questions to detailed performance analytics — PrepAI covers every
-              aspect of interview preparation.
+              From AI-generated questions to detailed performance analytics —
+              PrepAI covers every aspect of interview preparation.
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -142,7 +146,9 @@ export default function LandingPage() {
                     <feature.icon className="h-5 w-5 text-primary" />
                   </div>
                   <h3 className="font-semibold mb-2">{feature.title}</h3>
-                  <p className="text-sm text-muted-foreground">{feature.description}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {feature.description}
+                  </p>
                 </CardContent>
               </Card>
             ))}
@@ -181,7 +187,9 @@ export default function LandingPage() {
                 <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                   <item.icon className="h-6 w-6 text-primary" />
                 </div>
-                <div className="text-xs font-mono text-primary mb-2">{item.step}</div>
+                <div className="text-xs font-mono text-primary mb-2">
+                  {item.step}
+                </div>
                 <h3 className="font-semibold mb-2">{item.title}</h3>
                 <p className="text-sm text-muted-foreground">{item.desc}</p>
               </div>
@@ -193,7 +201,9 @@ export default function LandingPage() {
       {/* CTA Section */}
       <section className="py-20 px-4 bg-primary text-primary-foreground">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to Land Your Dream Job?</h2>
+          <h2 className="text-3xl font-bold mb-4">
+            Ready to Land Your Dream Job?
+          </h2>
           <p className="text-primary-foreground/80 mb-8">
             Join thousands of developers who prepared smarter with PrepAI.
           </p>
@@ -235,14 +245,9 @@ export default function LandingPage() {
             </div>
             <span className="font-semibold">PrepAI</span>
           </div>
-          <div className="text-sm text-muted-foreground text-center">
-            Built by{" "}
-            <span className="font-medium text-foreground">Mustali Chandwala</span> · House of
-            Edtech Assignment 2026
-          </div>
           <div className="flex items-center gap-3">
             <a
-              href="https://github.com/knackroot"
+              href="https://github.com/mustali17"
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
@@ -251,7 +256,7 @@ export default function LandingPage() {
               GitHub
             </a>
             <a
-              href="https://linkedin.com/in/mustali-chandwala"
+              href="https://www.linkedin.com/in/mustali17"
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
