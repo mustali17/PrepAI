@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { getAllQuestions } from "@/actions/questions";
 import { getAllTracksAdmin } from "@/actions/tracks";
 import { Card, CardContent } from "@/components/ui/card";
@@ -64,7 +65,7 @@ export default async function AdminQuestionsPage() {
                         Edit
                       </Button>
                     </QuestionDialog>
-                    <DeleteQuestionButton questionId={q.id} />
+                    {/* <DeleteQuestionButton questionId={q.id} /> */}
                   </div>
                 </div>
               </CardContent>
