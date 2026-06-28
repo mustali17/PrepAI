@@ -1,9 +1,6 @@
 import { getTracks } from "@/actions/tracks";
-import { startInterview } from "@/actions/interviews";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { getDifficultyColor } from "@/lib/utils";
 import { Brain, BookOpen, Users } from "lucide-react";
 import { StartInterviewButton } from "@/components/interviews/start-interview-button";
@@ -59,7 +56,7 @@ export default async function TracksPage() {
                 </div>
               </CardContent>
               <CardFooter>
-                <StartInterviewButton trackId={track.id} trackTitle={track.title} />
+                <StartInterviewButton trackId={track.id} />
               </CardFooter>
             </Card>
           ))}

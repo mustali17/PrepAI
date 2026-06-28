@@ -2,16 +2,22 @@
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { evaluateInterviewBatch } from "@/actions/ai";
 import { revalidatePath } from "next/cache";
 
-export async function startInterview(trackId: string) {
+export async function startInterview(source: { trackId?: string; practiceSetId?: string }) {
   const session = await auth();
   if (!session?.user) return { error: "Unauthorized" };
+
+  if (!source.trackId && !source.practiceSetId) {
+    return { error: "A track or practice set is required" };
+  }
 
   const interview = await prisma.interviewSession.create({
     data: {
       userId: session.user.id,
-      trackId,
+      trackId: source.trackId,
+      practiceSetId: source.practiceSetId,
       status: "IN_PROGRESS",
     },
   });
@@ -20,45 +26,99 @@ export async function startInterview(trackId: string) {
   return { success: true, interview };
 }
 
-export async function submitAnswer(
+/**
+ * Saves a candidate's raw answer text only — no AI call here. All answers
+ * for a session are evaluated together, in one batch, when the interview
+ * is completed (see completeInterview below).
+ */
+export async function saveAnswer(
   sessionId: string,
-  questionId: string,
-  answer: string,
-  score: number,
-  feedback: string,
-  suggestions: string[]
+  question: { questionId?: string; practiceQuestionId?: string },
+  answer: string
 ) {
   const session = await auth();
   if (!session?.user) return { error: "Unauthorized" };
 
+  const owns = await prisma.interviewSession.findFirst({
+    where: { id: sessionId, userId: session.user.id },
+    select: { id: true },
+  });
+  if (!owns) return { error: "Session not found" };
+
   const interviewAnswer = await prisma.interviewAnswer.create({
-    data: { sessionId, questionId, answer, score, feedback, suggestions },
+    data: {
+      sessionId,
+      questionId: question.questionId,
+      practiceQuestionId: question.practiceQuestionId,
+      answer,
+    },
   });
 
   return { success: true, answer: interviewAnswer };
 }
 
-export async function completeInterview(
-  sessionId: string,
-  overallScore: number,
-  aiSummary: string,
-  weakAreas: string[],
-  strongAreas: string[]
-) {
+/**
+ * Fetches every saved answer for a session and evaluates the whole
+ * interview in a single AI call, then writes the per-answer scores and
+ * the session-level summary back in one pass. Safe to call again if a
+ * prior attempt failed (e.g. AI timeout) — used for the "Try Again" retry.
+ */
+export async function completeInterview(sessionId: string) {
   const session = await auth();
   if (!session?.user) return { error: "Unauthorized" };
 
-  const interview = await prisma.interviewSession.update({
+  const interview = await prisma.interviewSession.findFirst({
     where: { id: sessionId, userId: session.user.id },
-    data: {
-      status: "COMPLETED",
-      overallScore,
-      aiSummary,
-      weakAreas,
-      strongAreas,
-      completedAt: new Date(),
+    include: {
+      answers: {
+        include: { question: true, practiceQuestion: true },
+        orderBy: { createdAt: "asc" },
+      },
     },
   });
+
+  if (!interview) return { error: "Session not found" };
+  if (interview.answers.length === 0) return { error: "No answers to evaluate" };
+
+  const answerPayload = interview.answers.map((a) => {
+    const q = a.question ?? a.practiceQuestion;
+    return {
+      question: q?.question ?? "",
+      answer: a.answer,
+      category: q?.category ?? "General",
+    };
+  });
+
+  let evaluation;
+  try {
+    evaluation = await evaluateInterviewBatch(answerPayload);
+  } catch {
+    return { error: "AI evaluation failed. Your answers are saved — you can try again." };
+  }
+
+  await prisma.$transaction([
+    ...interview.answers.map((a, i) =>
+      prisma.interviewAnswer.update({
+        where: { id: a.id },
+        data: {
+          score: evaluation.evaluations[i].score,
+          feedback: evaluation.evaluations[i].feedback,
+          suggestions: evaluation.evaluations[i].suggestions,
+        },
+      })
+    ),
+    prisma.interviewSession.update({
+      where: { id: sessionId },
+      data: {
+        status: "COMPLETED",
+        overallScore: evaluation.overallScore,
+        aiSummary: evaluation.summary,
+        weakAreas: evaluation.weakAreas,
+        strongAreas: evaluation.strongAreas,
+        completedAt: new Date(),
+      },
+    }),
+  ]);
 
   await prisma.user.update({
     where: { id: session.user.id },
@@ -67,7 +127,8 @@ export async function completeInterview(
 
   revalidatePath("/dashboard/interviews");
   revalidatePath("/dashboard");
-  return { success: true, interview };
+  revalidatePath("/dashboard/analytics");
+  return { success: true };
 }
 
 export async function abandonInterview(sessionId: string) {
@@ -103,6 +164,7 @@ export async function getUserInterviews() {
     where: { userId: session.user.id },
     include: {
       track: { select: { title: true, icon: true } },
+      practiceSet: { select: { title: true } },
       _count: { select: { answers: true } },
     },
     orderBy: { startedAt: "desc" },
@@ -117,12 +179,41 @@ export async function getInterviewSession(sessionId: string) {
     where: { id: sessionId, userId: session.user.id },
     include: {
       track: true,
+      practiceSet: true,
       answers: {
-        include: { question: true },
+        include: { question: true, practiceQuestion: true },
         orderBy: { createdAt: "asc" },
       },
     },
   });
+}
+
+/** Returns the full question list for a session's source (track or practice set), in a unified shape. */
+export async function getSessionQuestions(sessionId: string) {
+  const session = await auth();
+  if (!session?.user) return [];
+
+  const interview = await prisma.interviewSession.findFirst({
+    where: { id: sessionId, userId: session.user.id },
+    select: { trackId: true, practiceSetId: true },
+  });
+  if (!interview) return [];
+
+  if (interview.trackId) {
+    return prisma.question.findMany({
+      where: { trackId: interview.trackId },
+      orderBy: { createdAt: "asc" },
+    });
+  }
+
+  if (interview.practiceSetId) {
+    return prisma.practiceQuestion.findMany({
+      where: { practiceSetId: interview.practiceSetId },
+      orderBy: { createdAt: "asc" },
+    });
+  }
+
+  return [];
 }
 
 export async function getUserAnalytics() {

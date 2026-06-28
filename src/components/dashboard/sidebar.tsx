@@ -17,6 +17,7 @@ import {
   HelpCircle,
   Menu,
   X,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -24,6 +25,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/dashboard/tracks", icon: BookOpen, label: "Interview Tracks" },
+  { href: "/dashboard/practice", icon: Sparkles, label: "Practice from JD" },
   { href: "/dashboard/interviews", icon: HelpCircle, label: "My Interviews" },
   { href: "/dashboard/notes", icon: FileText, label: "Notes" },
   { href: "/dashboard/analytics", icon: BarChart3, label: "Analytics" },

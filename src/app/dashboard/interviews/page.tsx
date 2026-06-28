@@ -1,5 +1,5 @@
 import { getUserInterviews } from "@/actions/interviews";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -48,11 +48,13 @@ export default async function InterviewsPage() {
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-4 flex-1 min-w-0">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-lg flex-shrink-0">
-                      {interview.track.icon ?? "🎯"}
+                      {interview.track?.icon ?? "🎯"}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-medium">{interview.track.title}</h3>
+                        <h3 className="font-medium">
+                          {interview.track?.title ?? interview.practiceSet?.title ?? "Practice Interview"}
+                        </h3>
                         <Badge
                           className={getStatusColor(interview.status)}
                           variant="outline"

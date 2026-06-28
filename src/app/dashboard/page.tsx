@@ -146,10 +146,12 @@ export default async function DashboardPage() {
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm">
-                          {session.track.icon ?? "🎯"}
+                          {session.track?.icon ?? "🎯"}
                         </div>
                         <div>
-                          <p className="text-sm font-medium">{session.track.title}</p>
+                          <p className="text-sm font-medium">
+                            {session.track?.title ?? session.practiceSet?.title ?? "Practice Interview"}
+                          </p>
                           <p className="text-xs text-muted-foreground">
                             {formatDate(session.startedAt)} · {session._count.answers} questions
                           </p>

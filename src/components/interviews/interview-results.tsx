@@ -1,6 +1,9 @@
 "use client";
 
+import { useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { startInterview } from "@/actions/interviews";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,36 +17,58 @@ import {
   BarChart3,
   Brain,
   MessageSquare,
+  RotateCcw,
+  Loader2,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
 interface ResultsProps {
   session: {
     id: string;
+    trackId: string | null;
+    practiceSetId: string | null;
     overallScore: number | null;
     aiSummary: string | null;
     weakAreas: string[];
     strongAreas: string[];
     startedAt: Date;
     completedAt: Date | null;
-    track: { title: string; icon: string | null };
+    track: { title: string; icon: string | null } | null;
+    practiceSet: { title: string } | null;
     answers: Array<{
       id: string;
       answer: string;
       score: number | null;
       feedback: string | null;
       suggestions: string[];
-      question: { question: string; category: string };
+      question: { question: string; category: string } | null;
+      practiceQuestion: { question: string; category: string } | null;
     }>;
   };
 }
 
 export function InterviewResults({ session }: ResultsProps) {
+  const router = useRouter();
+  const [isRetrying, startRetrying] = useTransition();
+
   const score = session.overallScore ?? 0;
+  const title = session.track?.title ?? session.practiceSet?.title ?? "Practice Interview";
 
   const scoreColor =
     score >= 7 ? "text-green-600" : score >= 4 ? "text-yellow-600" : "text-red-600";
   const scoreLabel = score >= 7 ? "Excellent!" : score >= 4 ? "Good effort!" : "Keep practicing!";
+
+  const handleTryAgain = () => {
+    startRetrying(async () => {
+      const result = await startInterview({
+        trackId: session.trackId ?? undefined,
+        practiceSetId: session.practiceSetId ?? undefined,
+      });
+      if (result?.interview) {
+        router.push(`/dashboard/interviews/${result.interview.id}`);
+      }
+    });
+  };
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -58,7 +83,7 @@ export function InterviewResults({ session }: ResultsProps) {
         <div>
           <h1 className="text-xl font-bold">Interview Results</h1>
           <p className="text-sm text-muted-foreground">
-            {session.track.title} · {formatDate(session.startedAt)}
+            {title} · {formatDate(session.startedAt)}
           </p>
         </div>
       </div>
@@ -143,61 +168,73 @@ export function InterviewResults({ session }: ResultsProps) {
           <CardDescription>{session.answers.length} questions answered</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {session.answers.map((answer, idx) => (
-            <div key={answer.id} className="border rounded-lg p-4 space-y-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-mono text-muted-foreground">Q{idx + 1}</span>
-                    <Badge variant="secondary" className="text-xs">
-                      {answer.question.category}
-                    </Badge>
+          {session.answers.map((answer, idx) => {
+            const q = answer.question ?? answer.practiceQuestion;
+            return (
+              <div key={answer.id} className="border rounded-lg p-4 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-mono text-muted-foreground">Q{idx + 1}</span>
+                      {q && (
+                        <Badge variant="secondary" className="text-xs">
+                          {q.category}
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-sm font-medium">{q?.question}</p>
                   </div>
-                  <p className="text-sm font-medium">{answer.question.question}</p>
+                  {answer.score !== null && (
+                    <div
+                      className={`text-lg font-bold flex-shrink-0 ${
+                        answer.score >= 7
+                          ? "text-green-600"
+                          : answer.score >= 4
+                          ? "text-yellow-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {answer.score.toFixed(1)}
+                    </div>
+                  )}
                 </div>
+
                 {answer.score !== null && (
-                  <div
-                    className={`text-lg font-bold flex-shrink-0 ${
-                      answer.score >= 7
-                        ? "text-green-600"
-                        : answer.score >= 4
-                        ? "text-yellow-600"
-                        : "text-red-600"
-                    }`}
-                  >
-                    {answer.score.toFixed(1)}
+                  <Progress value={(answer.score / 10) * 100} className="h-1" />
+                )}
+
+                <div className="bg-muted/50 rounded p-3">
+                  <p className="text-xs text-muted-foreground mb-1">Your answer</p>
+                  <p className="text-sm">{answer.answer}</p>
+                </div>
+
+                {answer.feedback && (
+                  <div className="text-sm text-muted-foreground">
+                    <CheckCircle className="h-3 w-3 inline mr-1 text-primary" />
+                    {answer.feedback}
                   </div>
                 )}
               </div>
-
-              {answer.score !== null && (
-                <Progress value={(answer.score / 10) * 100} className="h-1" />
-              )}
-
-              <div className="bg-muted/50 rounded p-3">
-                <p className="text-xs text-muted-foreground mb-1">Your answer</p>
-                <p className="text-sm">{answer.answer}</p>
-              </div>
-
-              {answer.feedback && (
-                <div className="text-sm text-muted-foreground">
-                  <CheckCircle className="h-3 w-3 inline mr-1 text-primary" />
-                  {answer.feedback}
-                </div>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </CardContent>
       </Card>
 
       {/* Actions */}
       <div className="flex gap-3">
-        <Link href="/dashboard/tracks" className="flex-1">
-          <Button variant="outline" className="w-full gap-2">
-            <Brain className="h-4 w-4" />
-            Practice Again
-          </Button>
-        </Link>
+        <Button
+          variant="outline"
+          className="flex-1 gap-2"
+          onClick={handleTryAgain}
+          disabled={isRetrying}
+        >
+          {isRetrying ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <RotateCcw className="h-4 w-4" />
+          )}
+          {isRetrying ? "Starting..." : "Try Again"}
+        </Button>
         <Link href="/dashboard/analytics" className="flex-1">
           <Button className="w-full gap-2">
             <BarChart3 className="h-4 w-4" />

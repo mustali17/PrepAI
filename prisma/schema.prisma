@@ -42,9 +42,10 @@ model User {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  sessions InterviewSession[]
-  notes    Note[]
-  accounts Account[]
+  sessions     InterviewSession[]
+  notes        Note[]
+  accounts     Account[]
+  practiceSets PracticeSet[]
 }
 
 model Account {
@@ -96,34 +97,64 @@ model Question {
 }
 
 model InterviewSession {
-  id           String        @id @default(auto()) @map("_id") @db.ObjectId
-  userId       String        @db.ObjectId
-  trackId      String        @db.ObjectId
-  status       SessionStatus @default(IN_PROGRESS)
-  overallScore Float?
-  aiSummary    String?
-  weakAreas    String[]
-  strongAreas  String[]
-  startedAt    DateTime      @default(now())
-  completedAt  DateTime?
+  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String        @db.ObjectId
+  trackId       String?       @db.ObjectId
+  practiceSetId String?       @db.ObjectId
+  status        SessionStatus @default(IN_PROGRESS)
+  overallScore  Float?
+  aiSummary     String?
+  weakAreas     String[]
+  strongAreas   String[]
+  startedAt     DateTime      @default(now())
+  completedAt   DateTime?
 
-  user    User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  track   Track             @relation(fields: [trackId], references: [id])
-  answers InterviewAnswer[]
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track       Track?            @relation(fields: [trackId], references: [id])
+  practiceSet PracticeSet?      @relation(fields: [practiceSetId], references: [id])
+  answers     InterviewAnswer[]
 }
 
 model InterviewAnswer {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  sessionId   String   @db.ObjectId
-  questionId  String   @db.ObjectId
-  answer      String
-  score       Float?
-  feedback    String?
-  suggestions String[]
-  createdAt   DateTime @default(now())
+  id                 String   @id @default(auto()) @map("_id") @db.ObjectId
+  sessionId          String   @db.ObjectId
+  questionId         String?  @db.ObjectId
+  practiceQuestionId String?  @db.ObjectId
+  answer             String
+  score              Float?
+  feedback           String?
+  suggestions        String[]
+  createdAt          DateTime @default(now())
 
-  session  InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  question Question         @relation(fields: [questionId], references: [id])
+  session          InterviewSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  question         Question?         @relation(fields: [questionId], references: [id])
+  practiceQuestion PracticeQuestion? @relation(fields: [practiceQuestionId], references: [id])
+}
+
+model PracticeSet {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String   @db.ObjectId
+  title          String
+  jobDescription String
+  resumeText     String
+  createdAt      DateTime @default(now())
+
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questions PracticeQuestion[]
+  sessions  InterviewSession[]
+}
+
+model PracticeQuestion {
+  id            String     @id @default(auto()) @map("_id") @db.ObjectId
+  practiceSetId String     @db.ObjectId
+  question      String
+  category      String
+  difficulty    Difficulty @default(INTERMEDIATE)
+  tags          String[]
+  createdAt     DateTime   @default(now())
+
+  practiceSet PracticeSet       @relation(fields: [practiceSetId], references: [id], onDelete: Cascade)
+  answers     InterviewAnswer[]
 }
 
 model Note {

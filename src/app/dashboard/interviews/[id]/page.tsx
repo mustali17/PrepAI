@@ -1,5 +1,4 @@
-import { getInterviewSession } from "@/actions/interviews";
-import { getQuestionsByTrack } from "@/actions/questions";
+import { getInterviewSession, getSessionQuestions } from "@/actions/interviews";
 import { redirect } from "next/navigation";
 import { InterviewSession } from "@/components/interviews/interview-session";
 import { InterviewResults } from "@/components/interviews/interview-results";
@@ -18,13 +17,24 @@ export default async function InterviewPage({ params }: InterviewPageProps) {
     return <InterviewResults session={session} />;
   }
 
-  const questions = await getQuestionsByTrack(session.trackId);
-  const answeredIds = new Set(session.answers.map((a) => a.questionId));
+  const questions = await getSessionQuestions(id);
+  const answeredIds = new Set(
+    session.answers.map((a) => a.questionId ?? a.practiceQuestionId)
+  );
   const remaining = questions.filter((q) => !answeredIds.has(q.id));
+
+  const title = session.track?.title ?? session.practiceSet?.title ?? "Practice Interview";
+  const icon = session.track?.icon ?? "🎯";
 
   return (
     <InterviewSession
-      session={session}
+      session={{
+        id: session.id,
+        title,
+        icon,
+        trackId: session.trackId,
+        practiceSetId: session.practiceSetId,
+      }}
       questions={remaining}
       answeredCount={session.answers.length}
       totalCount={questions.length}
