@@ -1,19 +1,15 @@
-import { PDFParse } from "pdf-parse";
+import { getDocumentProxy, extractText } from "unpdf";
 
 export async function extractResumeText(file: File): Promise<string> {
   const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
+  const buffer = new Uint8Array(arrayBuffer);
 
   if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
-    const parser = new PDFParse({ data: buffer });
-    try {
-      const result = await parser.getText();
-      return result.text.trim();
-    } finally {
-      await parser.destroy();
-    }
+    const pdf = await getDocumentProxy(buffer);
+    const { text } = await extractText(pdf, { mergePages: true });
+    return text.trim();
   }
 
   // Plain text / .txt fallback
-  return buffer.toString("utf-8").trim();
+  return Buffer.from(buffer).toString("utf-8").trim();
 }
